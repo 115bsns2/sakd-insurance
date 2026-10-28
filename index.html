@@ -238,10 +238,17 @@ footer .logo{margin-bottom:12px;filter:grayscale(1);opacity:.7}
 footer p+p{margin-top:6px}
 
 /* sticky bottom CTA */
-.dock{position:fixed;left:0;right:0;bottom:0;z-index:40;transition:transform .3s}
-.dock.off{transform:translateY(110%)}
-.dock a{display:flex;align-items:center;justify-content:center;gap:8px;height:64px;padding-bottom:env(safe-area-inset-bottom);background:var(--brand);color:#fff;font-size:18px;font-weight:700}
-.dock a:hover{background:var(--brand-deep)}
+.dock{position:fixed;left:0;right:0;bottom:0;z-index:40;padding:0 16px calc(18px + env(safe-area-inset-bottom));pointer-events:none;transition:transform .4s cubic-bezier(.2,.8,.2,1),opacity .3s}
+.dock.off{transform:translateY(140%);opacity:0}
+.dock > *{pointer-events:auto}
+.dock .rendered-icon{flex:none;animation:none;filter:drop-shadow(0 6px 8px #0b4a3c33)}
+/* 버튼 위로 빛이 한 번씩 지나감 */
+.shine{position:relative;overflow:hidden;isolation:isolate}
+.shine:after{content:'';position:absolute;top:0;left:-60%;width:40%;height:100%;background:linear-gradient(100deg,transparent,#ffffff70,transparent);transform:skewX(-20deg);animation:shine 3.6s ease-in-out infinite;z-index:-1}
+@keyframes shine{0%,55%{left:-60%}100%{left:140%}}
+.dock-pill{display:flex;align-items:center;gap:10px;width:fit-content;margin:0 auto;height:66px;padding:0 32px 0 12px;border-radius:999px;background:var(--brand);color:#fff;font-size:18.5px;font-weight:800;box-shadow:0 0 0 6px #fff,0 22px 44px -14px #0a6e5ccc;transition:background .2s,transform .2s}
+.dock-pill:hover{background:var(--brand-deep);transform:translateY(-2px)}
+.dock-pill .rendered-icon{width:54px;height:54px;margin:-6px 0}
 
 /* ---------- motion ---------- */
 .cnt{font-style:normal}
@@ -261,6 +268,8 @@ footer p+p{margin-top:6px}
   .faq{gap:16px}
   .apply-intro{border-radius:32px 32px 0 0;padding:40px 24px 32px}
   .apply-intro:after{display:none}
+  .dock{padding-bottom:calc(12px + env(safe-area-inset-bottom))}
+  .dock-pill{width:100%;justify-content:center;height:60px;font-size:17px;padding:0 20px 0 10px}
   .apply-checks{margin-top:22px;gap:8px}
   .apply .rendered-icon{right:12px;top:-40px;bottom:auto;width:96px;height:96px}
   .report-side{order:-1}.report-side img{max-width:200px}
@@ -515,7 +524,9 @@ footer p+p{margin-top:6px}
   </div>
 </footer>
 
-<div class="dock off" id="dock"><a href="#apply" data-cta>내 보험 무료로 확인하기 <span aria-hidden="true">›</span></a></div>
+<div class="dock off" id="dock">
+  <a class="dock-pill shine" href="#apply" data-cta><span class="rendered-icon i-medical" aria-hidden="true"></span>내 보험 무료로 확인하기 <span aria-hidden="true">›</span></a>
+</div>
 
 <script>
 (function(){
@@ -592,15 +603,16 @@ footer p+p{margin-top:6px}
     result.focus({preventScroll: true});
   });
 
-  // bottom CTA bar: show after hero, hide while the apply section is on screen
+  // bottom CTA: hidden on the hero, the apply section, and while an inline CTA is on screen
   var dock = document.getElementById('dock');
   if ('IntersectionObserver' in window) {
-    var seen = {top: true};
+    var hiders = [document.getElementById('top'), document.getElementById('apply')].concat([].slice.call(document.querySelectorAll('.bridge .btn, .cta-row .btn')));
+    var shown = new Set([hiders[0]]);
     var io = new IntersectionObserver(function(es){
-      es.forEach(function(en){ seen[en.target.id] = en.isIntersecting; });
-      dock.classList.toggle('off', !!(seen.top || seen.apply));
+      es.forEach(function(en){ en.isIntersecting ? shown.add(en.target) : shown.delete(en.target); });
+      dock.classList.toggle('off', shown.size > 0);
     }, {threshold: 0.1});
-    ['top', 'apply'].forEach(function(id){ io.observe(document.getElementById(id)); });
+    hiders.forEach(function(el){ io.observe(el); });
   } else dock.classList.remove('off');
 })();
 </script>
